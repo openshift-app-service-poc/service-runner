@@ -1,0 +1,6 @@
+apiVersion: servicecatalog.io.servicecatalog.io/v1alpha1
+kind: ServiceRunner
+metadata:
+  name: servicerunner-sample
+spec:
+  # TODO(user): Add fields here
