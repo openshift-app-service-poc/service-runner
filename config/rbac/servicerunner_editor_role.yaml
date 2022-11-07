@@ -1,0 +1,24 @@
+# permissions for end users to edit servicerunners.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: servicerunner-editor-role
+rules:
+- apiGroups:
+  - servicecatalog.io.servicecatalog.io
+  resources:
+  - servicerunners
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - servicecatalog.io.servicecatalog.io
+  resources:
+  - servicerunners/status
+  verbs:
+  - get
