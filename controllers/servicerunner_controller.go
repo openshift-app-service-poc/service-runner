@@ -19,12 +19,15 @@ package controllers
 import (
 	"context"
 
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	servicecatalogiov1alpha1 "github.com/redhat-developer/service-runner/api/v1alpha1"
+	"github.com/openshift-app-service-poc/service-runner/api/v1alpha1"
+	servicecatalogiov1alpha1 "github.com/openshift-app-service-poc/service-runner/api/v1alpha1"
+	"github.com/openshift-app-service-poc/service-runner/pkg/resolve"
 )
 
 // ServiceRunnerReconciler reconciles a ServiceRunner object
@@ -33,9 +36,13 @@ type ServiceRunnerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=servicecatalog.io.servicecatalog.io,resources=servicerunners,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=servicecatalog.io.servicecatalog.io,resources=servicerunners/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=servicecatalog.io.servicecatalog.io,resources=servicerunners/finalizers,verbs=update
+//+kubebuilder:rbac:groups=servicecatalog.io,resources=servicerunners,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=servicecatalog.io,resources=servicerunners/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=servicecatalog.io,resources=servicerunners/finalizers,verbs=update
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;delete
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=pods/log,verbs=get
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=create;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,16 +54,31 @@ type ServiceRunnerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *ServiceRunnerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	l := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	runner := &v1alpha1.ServiceRunner{}
+	err := r.Client.Get(ctx, req.NamespacedName, runner)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	res, err := resolve.GetResolver(runner, r.Client).Resolve(ctx)
+	if err != nil {
+		l.Error(err, "Failed to resolve service runner", "runner", runner.Name, "namespace", runner.Namespace, "stage", runner.Status.State)
+	} else {
+		l.Info("Resolved runner", "runner", runner.Name, "namespace", runner.Namespace, "stage", runner.Status.State)
+	}
+	err = r.Client.Status().Update(ctx, runner)
+	if err != nil {
+		res.Requeue = true
+	}
 
-	return ctrl.Result{}, nil
+	return res, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ServiceRunnerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&servicecatalogiov1alpha1.ServiceRunner{}).
+		Owns(&batchv1.Job{}).
 		Complete(r)
 }

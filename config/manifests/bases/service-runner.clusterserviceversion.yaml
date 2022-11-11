@@ -1,0 +1,49 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: service-runner.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: ServiceRunner is the Schema for the servicerunners API
+      displayName: Service Runner
+      kind: ServiceRunner
+      name: servicerunners.servicecatalog.io
+      version: v1alpha1
+  description: Manages service runners
+  displayName: service-runner-operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - service-bindings
+  - dbaas
+  - service
+  links:
+  - name: Service Runner
+    url: https://service-runner.domain
+  maintainers:
+  - email: ansadler@redhat.com
+    name: Andy Sadler
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.0.0

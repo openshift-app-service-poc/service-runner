@@ -5,15 +5,14 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: service-runner
-repo: github.com/redhat-developer/service-runner
+repo: github.com/openshift-app-service-poc/service-runner
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: servicecatalog.io
   group: servicecatalog.io
   kind: ServiceRunner
-  path: github.com/redhat-developer/service-runner/api/v1alpha1
+  path: github.com/openshift-app-service-poc/service-runner/api/v1alpha1
   version: v1alpha1
 version: "3"

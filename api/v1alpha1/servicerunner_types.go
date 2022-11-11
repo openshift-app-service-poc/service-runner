@@ -23,19 +23,43 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// ServiceRunnerImage defines the image used to manage the underlying service
+type ServiceRunnerImage struct {
+	CrudImage string `json:"crudImage"`
+}
+
 // ServiceRunnerSpec defines the desired state of ServiceRunner
 type ServiceRunnerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ControlPlaneSecret specifies configuration data for interacting with the control plane
+	ControlPlaneSecret string `json:"controlPlaneSecret,omitempty"`
 
-	// Foo is an example field of ServiceRunner. Edit servicerunner_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// ServiceParam contains parameters for the underlying service runner
+	ServiceParam map[string]string `json:"serviceParams,omitempty"`
+
+	// ServiceImage specifies the image to use for CRUD operations
+	ServiceImage ServiceRunnerImage `json:"serviceImage"`
+}
+
+// ServiceRunnerBindingRef contains the secret pointing to binding information
+// for workloads.
+type ServiceRunnerBindingRef struct {
+	// Name contains the name of the secret with binding information.
+	Name string `json:"name,omitempty"`
 }
 
 // ServiceRunnerStatus defines the observed state of ServiceRunner
 type ServiceRunnerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Binding specifies where binding information has been written.
+	Binding *ServiceRunnerBindingRef `json:"binding,omitempty"`
+
+	// ServiceId sets the ID of the underlying service
+	ServiceId string `json:"serviceId,omitempty"`
+
+	// State stores the current state of the runner
+	State string `json:"state,omitempty"`
 }
 
 //+kubebuilder:object:root=true
