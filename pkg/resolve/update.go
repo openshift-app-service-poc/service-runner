@@ -29,11 +29,15 @@ func (u *Update) JobName() string {
 	return fmt.Sprintf("%s-update", u.serviceRunner.Name)
 }
 
-func (c *Update) Resolve(ctx context.Context) (ctrl.Result, error) {
+func (u *Update) Resolve(ctx context.Context) (ctrl.Result, error) {
+	if u.serviceRunner.Status.ObservedGeneration == u.serviceRunner.Generation {
+		// nothing to do, return ready
+		return ctrl.Result{}, nil
+	}
 	res := ctrl.Result{Requeue: true}
 
 	// get the status of the create job
-	createJob, err := c.FindPreviousJob(ctx)
+	createJob, err := u.FindPreviousJob(ctx)
 	if err != nil {
 		return res, err
 	}
@@ -48,11 +52,11 @@ func (c *Update) Resolve(ctx context.Context) (ctrl.Result, error) {
 	}
 
 	// enqueue the update job
-	job := JobTemplate(c, "/update")
-	err = c.client.Create(ctx, job)
+	job := JobTemplate(u, "/update")
+	err = u.client.Create(ctx, job)
 	if err == nil {
 		res.Requeue = false
-		c.serviceRunner.Status.State = PIPELINE_UPDATE
+		u.serviceRunner.Status.State = PIPELINE_UPDATE
 	}
 
 	return res, err

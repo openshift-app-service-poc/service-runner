@@ -38,5 +38,6 @@ func (c *Create) Resolve(ctx context.Context) (ctrl.Result, error) {
 	}
 
 	c.serviceRunner.Status.State = PIPELINE_CREATE
+	c.serviceRunner.Status.ObservedGeneration = c.ServiceRunner().Generation
 	return res, err
 }

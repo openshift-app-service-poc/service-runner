@@ -55,6 +55,10 @@ type ServiceRunnerStatus struct {
 	// Binding specifies where binding information has been written.
 	Binding *ServiceRunnerBindingRef `json:"binding,omitempty"`
 
+	// ObservedGeneration keeps track of the last generation seen by the
+	// underlying controller
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// ServiceId sets the ID of the underlying service
 	ServiceId string `json:"serviceId,omitempty"`
 

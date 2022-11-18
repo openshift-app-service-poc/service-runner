@@ -68,6 +68,11 @@ spec:
                       information.
                     type: string
                 type: object
+              observedGeneration:
+                description: ObservedGeneration keeps track of the last generation
+                  seen by the underlying controller
+                format: int64
+                type: integer
               serviceId:
                 description: ServiceId sets the ID of the underlying service
                 type: string
