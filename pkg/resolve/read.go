@@ -33,19 +33,21 @@ func (r *Read) Resolve(ctx context.Context) (reconcile.Result, error) {
 	res := ctrl.Result{Requeue: true}
 
 	// get the status of the create job
-	createJob, err := r.FindPreviousJob(ctx)
+	prevJob, err := r.FindPreviousJob(ctx)
 	if err != nil {
 		return res, err
 	}
-	if createJob.Status.Succeeded != 1 {
+	if prevJob.Status.Succeeded != 1 {
 		// the create job hasn't succeeded yet; did it explicitly fail?
-		for _, cond := range createJob.Status.Conditions {
+		for _, cond := range prevJob.Status.Conditions {
 			if cond.Reason == "Failed" && cond.Status == "True" {
 				return ctrl.Result{}, fmt.Errorf("Failed to create service, bailing")
 			}
 		}
 		return res, fmt.Errorf("Job not yet complete, retrying")
 	}
+
+	r.client.Delete(ctx, prevJob)
 
 	// enqueue the update job
 	job := JobTemplate(r, "/read")

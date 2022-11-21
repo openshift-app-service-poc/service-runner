@@ -36,24 +36,9 @@ func (u *Update) Resolve(ctx context.Context) (ctrl.Result, error) {
 	}
 	res := ctrl.Result{Requeue: true}
 
-	// get the status of the create job
-	createJob, err := u.FindPreviousJob(ctx)
-	if err != nil {
-		return res, err
-	}
-	if createJob.Status.Succeeded != 1 {
-		// the create job hasn't succeeded yet; did it explicitly fail?
-		for _, cond := range createJob.Status.Conditions {
-			if cond.Reason == "Failed" && cond.Status == "True" {
-				return ctrl.Result{}, fmt.Errorf("Failed to create service, bailing")
-			}
-		}
-		return res, fmt.Errorf("Job not yet complete, retrying")
-	}
-
 	// enqueue the update job
 	job := JobTemplate(u, "/update")
-	err = u.client.Create(ctx, job)
+	err := u.client.Create(ctx, job)
 	if err == nil {
 		res.Requeue = false
 		u.serviceRunner.Status.State = PIPELINE_UPDATE

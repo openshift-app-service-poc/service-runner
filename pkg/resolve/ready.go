@@ -38,13 +38,13 @@ func (r *Ready) Resolve(ctx context.Context) (reconcile.Result, error) {
 	res := ctrl.Result{Requeue: true}
 
 	// get the status of the update job
-	createJob, err := r.FindPreviousJob(ctx)
+	prevJob, err := r.FindPreviousJob(ctx)
 	if err != nil {
 		return res, err
 	}
-	if createJob.Status.Succeeded != 1 {
+	if prevJob.Status.Succeeded != 1 {
 		// the create job hasn't succeeded yet; did it explicitly fail?
-		for _, cond := range createJob.Status.Conditions {
+		for _, cond := range prevJob.Status.Conditions {
 			if cond.Reason == "Failed" && cond.Status == "True" {
 				return ctrl.Result{}, fmt.Errorf("Failed to read service binding information, bailing")
 			}
@@ -88,7 +88,7 @@ func (r *Ready) Resolve(ctx context.Context) (reconcile.Result, error) {
 	r.serviceRunner.Status.Binding = &v1alpha1.ServiceRunnerBindingRef{Name: secret.Name}
 
 	// delete the update job; it was successful, and we don't need it anymore
-	if err = r.client.Delete(ctx, createJob); err != nil {
+	if err = r.client.Delete(ctx, prevJob); err != nil {
 		return res, err
 	}
 
