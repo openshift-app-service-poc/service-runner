@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	servicecatalogiov1alpha1 "github.com/redhat-developer/service-runner/api/v1alpha1"
-	"github.com/redhat-developer/service-runner/controllers"
+	servicecatalogiov1alpha1 "github.com/openshift-app-service-poc/service-runner/api/v1alpha1"
+	"github.com/openshift-app-service-poc/service-runner/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
