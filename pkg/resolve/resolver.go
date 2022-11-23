@@ -3,13 +3,15 @@ package resolve
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/openshift-app-service-poc/service-runner/api/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,7 +59,6 @@ func GetResolver(runner *v1alpha1.ServiceRunner, client client.Client) Resolver 
 }
 
 func (p *Pipeline) FindPreviousJob(ctx context.Context) (*batchv1.Job, error) {
-	job := &batchv1.Job{}
 	var creator Resolver
 	switch p.serviceRunner.Status.State {
 	case PIPELINE_READ:
@@ -72,11 +73,22 @@ func (p *Pipeline) FindPreviousJob(ctx context.Context) (*batchv1.Job, error) {
 		return nil, fmt.Errorf("Unexpected job state %v", p.serviceRunner.Status.State)
 	}
 	jobName := creator.JobName()
-	namespacedname := types.NamespacedName{Namespace: p.serviceRunner.Namespace, Name: jobName}
-	if err := p.client.Get(ctx, namespacedname, job); err != nil {
+
+	jobList := batchv1.JobList{}
+	err := p.client.List(ctx, &jobList, &client.ListOptions{
+		Namespace:     p.serviceRunner.Namespace,
+		LabelSelector: labels.SelectorFromSet(labels.Set{JobLabel: p.serviceRunner.Name}),
+	})
+	if err != nil {
 		return nil, err
 	}
-	return job, nil
+	for _, job := range jobList.Items {
+		if strings.HasPrefix(job.Name, jobName) {
+			return &job, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Job not found!")
 }
 
 func (p *Pipeline) ServiceRunner() *v1alpha1.ServiceRunner {
@@ -130,13 +142,21 @@ func (p *Pipeline) JobLog(ctx context.Context) ([]byte, error) {
 	return logRequest.DoRaw(ctx)
 }
 
+func uniqueJobName() string {
+	return string(uuid.NewUUID())[0:4]
+}
+
 const CONTROL_PLANE_SECRET = "control-plane"
+const JobLabel = "servicerunner.io/job"
 
 func JobTemplate(c Resolver, command ...string) *batchv1.Job {
 	job := &batchv1.Job{}
 	serviceRunner := c.ServiceRunner()
-	job.Name = c.JobName()
+	job.Name = fmt.Sprintf("%s-%s", c.JobName(), uniqueJobName())
 	job.Namespace = serviceRunner.Namespace
+	job.Labels = map[string]string{
+		JobLabel: serviceRunner.Name,
+	}
 	job.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: serviceRunner.APIVersion,
